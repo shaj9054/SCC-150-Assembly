@@ -1,0 +1,146 @@
+.data
+
+#using .data to store the string I want to print
+#info is a label for the intrustions/options
+
+info:   .asciiz   "Options: \tColours: \n1 - cls\t\t1 - yellow\n2 - stave\t2 - green\n3 - note\t3 - red\n4 - exit\t4 - pink\n\t\t5 - orange\n"
+input:   .asciiz  "Select Options "
+Detail:    .ascii   "Select Colour/Row/Note "
+
+#.word stores the listed values as a 32 bit words on a word boundary
+# sort of like an array of colours we can have
+colour:   .word 0xffff00 0x00ff00 0xff0000 0xff007f 0xff9900
+		# yellow   green    red      pink    orange
+
+.text
+
+main: 
+addi $v0,$zero,4 #tells the syscall to print out the string
+la $a0,info 	#loads the label info/ the string into $a0
+syscall 	#The syscall will print out the information colours, options etc
+
+#these syscalls allows for users input
+
+#Prompts the user for an input
+addi $v0, $zero, 4
+la $a0, input
+syscall
+
+#Reads the input from the user
+addi $v0, $zero, 5
+syscall
+move $t0, $v0
+
+#Requests another input for details e.g colour/row/note
+addi $v0, $zero, 4
+la $a0, Detail
+syscall
+
+#takes input 
+addi $v0, $zero, 5
+syscall
+move $t1, $v0
+
+#this branches to different part of code when a number is given by the user 
+beq $t0, 1, cls
+beq $t0, 2, stave
+beq $t0, 3, note
+
+
+cls:
+#this allows us to colour the screen 
+addi $s0,$zero,0
+lui $s0,0x1004 # base address 
+addi $s1, $s0, 524288 #this value is found by height x width x pixel size which gives us this value
+
+#this allows the user to change the colours of the screen
+#by using beq so it chooses the correct colour when the number is called upon   
+beq $v0, 1, Yellow
+beq $v0, 2, Green
+beq $v0, 3, Red
+beq $v0, 4, Pink
+beq $v0, 5, Orange
+
+
+loop:
+	sw $a0,0($s0)
+	addi $s0, $s0, 4 # this fills in the screen every 4 pixels
+	bne $s0, $s1, loop #used branch is equal to or not equal to to break the loop
+	
+j main # this jumps back to the main or else it would be a neverending loop 
+
+Yellow:
+	addi $a0, $zero, 0xffff00
+	j loop #j loops go back to loops so that it can colour the screen in the correct colour
+	
+Green:
+	addi $a0, $zero, 0x00ff00
+	j loop
+	
+Red:
+	addi $a0, $zero, 0xff0000
+	j loop
+Pink:
+	addi $a0, $zero, 0xff007f 
+	j loop
+Orange:
+	addi $a0, $zero, 0xff9900
+	j loop
+
+	
+stave:	
+#drawing the stave
+
+
+addi $a0,$zero,0x00000000 #this sets the colour of the line to black
+addi $t0, $zero, 5 #this is for how many lines there are
+
+add $s2, $t1, $zero #this allows the lines to be variable from user input
+sll $s2, $s2, 11 
+
+addi $s0,$zero,0 
+lui $s0,0x1004 #this is the base address
+add $s0, $s0, $s2
+addi $s1, $s0, 2048 # this value was achieved by pixel size x width so that the line reaches the end  
+
+lineLoop:
+	jal line #This a jump and link which allows us to jump to a different part of the program
+	addi $s0,$zero, 0
+	lui $s0,0x1004 # this is another base address
+	addi $s2, $s2, 20480 #used to increment the lines by 10 pixels so pixel size x width x 10  
+	add $s0, $s0, $s2
+	addi $s1, $s0, 2048
+	addi $t0, $t0, -1 #this decrements the counter by 1
+	bgtz $t0, lineLoop #branch if greater than or eqaul to 0 this is used to break out of the loop when we reach 5 lines
+
+addi $v0, $zero, 10 
+syscall #this syscall will terminate the loop
+
+line:
+	sw $a0,0($s0) 
+	addi $s0, $s0, 4
+	bne $s0, $s1, line
+	jr $ra #jump and link jumps down here
+	
+note:
+#drawing the note
+
+
+
+
+
+
+
+
+
+
+ 
+
+
+
+
+
+
+
+
+
